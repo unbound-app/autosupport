@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	attachmentProcessingError,
 	buildInputContent,
 	cleanResponseText,
 	isMissingVectorStoreError,
@@ -212,6 +213,20 @@ describe("buildInputContent", () => {
 
 		expect(result.content).toHaveLength(MAX_ATTACHMENTS);
 		expect(result.droppedAttachments).toBe(2);
+	});
+});
+
+describe("attachmentProcessingError", () => {
+	test("uses singular grammar for one dropped attachment", () => {
+		expect(attachmentProcessingError(1)).toBe(
+			"Sorry, I couldn't process that message — the attachment was too large or an unsupported type. Try a smaller file or a common image format.",
+		);
+	});
+
+	test("uses plural grammar for multiple dropped attachments", () => {
+		expect(attachmentProcessingError(2)).toBe(
+			"Sorry, I couldn't process that message — the attachments were too large or an unsupported type. Try a smaller file or a common image format.",
+		);
 	});
 });
 

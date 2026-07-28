@@ -185,6 +185,12 @@ export function buildInputContent(message: Message): BuiltInputContent {
 	return { content, droppedAttachments };
 }
 
+export function attachmentProcessingError(droppedAttachments: number): string {
+	const attachmentDescription =
+		droppedAttachments === 1 ? "the attachment was" : "the attachments were";
+	return `Sorry, I couldn't process that message — ${attachmentDescription} too large or an unsupported type. Try a smaller file or a common image format.`;
+}
+
 export async function getResponse(message: Message) {
 	let threadRateLimit: RateLimit<string> | undefined;
 	let userRateLimit: RateLimit<string> | undefined;
@@ -259,7 +265,7 @@ export async function getResponse(message: Message) {
 				components: [
 					statusContainer(
 						StatusColor.Warning,
-						"Sorry, I couldn't process that message — the attachment(s) were too large or an unsupported type. Try a smaller file or a common image format.",
+						attachmentProcessingError(droppedAttachments),
 					),
 				],
 				allowedMentions: { repliedUser: true },
