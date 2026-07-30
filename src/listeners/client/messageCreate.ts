@@ -4,7 +4,7 @@ import { getGuildSettingsIfExists } from "@src/database/db";
 import { getResponse } from "@utils/autosupport";
 import type { Message } from "discord.js";
 
-export function hasIgnoredRole(
+function hasIgnoredRole(
 	memberRoleIds: Iterable<string>,
 	ignoredRoleIds: readonly string[],
 ): boolean {
