@@ -15,6 +15,13 @@
 			"when": 1783527354542,
 			"tag": "0001_stormy_jack_power",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1785396135948,
+			"tag": "0002_chemical_kulan_gath",
+			"breakpoints": true
 		}
 	]
 }

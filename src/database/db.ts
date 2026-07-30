@@ -27,6 +27,7 @@ export async function getOrCreateGuildSettings(guildId: string) {
 		knowledgeBaseVectorStoreId: null,
 		knowledgeBaseHash: null,
 		supportRoleId: null,
+		ignoredRoleIds: [],
 	};
 
 	await db
@@ -66,6 +67,7 @@ function readOrCreateGuildSettingsSync(
 		knowledgeBaseVectorStoreId: null,
 		knowledgeBaseHash: null,
 		supportRoleId: null,
+		ignoredRoleIds: [],
 	};
 	tx.insert(schema.guildPreferences)
 		.values(newSettings)
@@ -127,6 +129,42 @@ export async function setSupportRoleId(guildId: string, roleId: string) {
 
 export async function clearSupportRoleId(guildId: string) {
 	return updateGuildSettings(guildId, { supportRoleId: null });
+}
+
+export async function addIgnoredRoleId(
+	guildId: string,
+	roleId: string,
+): Promise<GuildSettings> {
+	return db.transaction((tx) => {
+		const settings = readOrCreateGuildSettingsSync(tx, guildId);
+		if (settings.ignoredRoleIds.includes(roleId)) return settings;
+
+		const ignoredRoleIds = [...settings.ignoredRoleIds, roleId];
+		tx.update(schema.guildPreferences)
+			.set({ ignoredRoleIds })
+			.where(eq(schema.guildPreferences.id, guildId))
+			.run();
+
+		return { ...settings, ignoredRoleIds };
+	});
+}
+
+export async function removeIgnoredRoleId(
+	guildId: string,
+	roleId: string,
+): Promise<GuildSettings> {
+	return db.transaction((tx) => {
+		const settings = readOrCreateGuildSettingsSync(tx, guildId);
+		const ignoredRoleIds = settings.ignoredRoleIds.filter(
+			(id) => id !== roleId,
+		);
+		tx.update(schema.guildPreferences)
+			.set({ ignoredRoleIds })
+			.where(eq(schema.guildPreferences.id, guildId))
+			.run();
+
+		return { ...settings, ignoredRoleIds };
+	});
 }
 
 export interface KnowledgeBaseState {

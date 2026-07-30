@@ -1,12 +1,14 @@
 import { Subcommand } from "@sapphire/plugin-subcommands";
 import data from "@src/data.toml";
 import {
+	addIgnoredRoleId,
 	addSupportChannelId,
 	clearSupportRoleId,
 	clearThreadEscalated,
 	countEscalatedThreadsForGuild,
 	deleteThreadResponsesForThread,
 	getOrCreateGuildSettings,
+	removeIgnoredRoleId,
 	removeSupportChannelId,
 	setSupportRoleId,
 } from "@src/database/db";
@@ -44,6 +46,15 @@ export class SettingsCommand extends Subcommand {
 					],
 				},
 				{ name: "support-role", chatInputRun: "chatInputSupportRole" },
+				{
+					name: "ignored-roles",
+					type: "group",
+					entries: [
+						{ name: "add", chatInputRun: "chatInputAddIgnoredRole" },
+						{ name: "remove", chatInputRun: "chatInputRemoveIgnoredRole" },
+						{ name: "list", chatInputRun: "chatInputListIgnoredRoles" },
+					],
+				},
 			],
 		});
 	}
@@ -69,6 +80,7 @@ export class SettingsCommand extends Subcommand {
 		const escalatedText = `**Active threads**\n${escalatedCount === 0 ? "No threads currently waiting on a human" : `${escalatedCount} thread${escalatedCount === 1 ? "" : "s"} currently waiting on a human`}`;
 
 		const supportRoleText = `**Support role**\n${settings.supportRoleId ? `${roleMention(settings.supportRoleId)} is pinged when a thread requests human assistance` : "No support role configured — escalations won't ping anyone"}`;
+		const ignoredRolesText = `**Ignored roles**\n${settings.ignoredRoleIds.length ? settings.ignoredRoleIds.map((id) => roleMention(id)).join("\n") : "No ignored roles configured"}`;
 
 		const accentColor =
 			hasChannels && hasKnowledgeBase
@@ -93,6 +105,10 @@ export class SettingsCommand extends Subcommand {
 			.addSeparatorComponents(new SeparatorBuilder())
 			.addTextDisplayComponents(
 				new TextDisplayBuilder().setContent(supportRoleText),
+			)
+			.addSeparatorComponents(new SeparatorBuilder())
+			.addTextDisplayComponents(
+				new TextDisplayBuilder().setContent(ignoredRolesText),
 			);
 
 		await interaction.reply({
@@ -203,6 +219,74 @@ export class SettingsCommand extends Subcommand {
 		});
 	}
 
+	public async chatInputAddIgnoredRole(
+		interaction: ChatInputCommandInteraction,
+	) {
+		if (!interaction.guildId) return;
+		const role = interaction.options.getRole("role", true);
+		const settings = await getOrCreateGuildSettings(interaction.guildId);
+		const alreadyIgnored = settings.ignoredRoleIds.includes(role.id);
+		await addIgnoredRoleId(interaction.guildId, role.id);
+
+		await interaction.reply({
+			components: [
+				statusContainer(
+					alreadyIgnored ? StatusColor.Neutral : StatusColor.Success,
+					alreadyIgnored
+						? `${roleMention(role.id)} is already ignored.`
+						: `${roleMention(role.id)} added to ignored roles. Messages from members with this role will not be processed in support threads.`,
+				),
+			],
+			flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+		});
+	}
+
+	public async chatInputRemoveIgnoredRole(
+		interaction: ChatInputCommandInteraction,
+	) {
+		if (!interaction.guildId) return;
+		const role = interaction.options.getRole("role", true);
+		const settings = await getOrCreateGuildSettings(interaction.guildId);
+		if (!settings.ignoredRoleIds.includes(role.id)) {
+			await interaction.reply({
+				components: [
+					statusContainer(
+						StatusColor.Neutral,
+						`${roleMention(role.id)} is not an ignored role.`,
+					),
+				],
+				flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+			});
+			return;
+		}
+
+		await removeIgnoredRoleId(interaction.guildId, role.id);
+		await interaction.reply({
+			components: [
+				statusContainer(
+					StatusColor.Success,
+					`${roleMention(role.id)} removed from ignored roles.`,
+				),
+			],
+			flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+		});
+	}
+
+	public async chatInputListIgnoredRoles(
+		interaction: ChatInputCommandInteraction,
+	) {
+		if (!interaction.guildId) return;
+		const settings = await getOrCreateGuildSettings(interaction.guildId);
+		const content = settings.ignoredRoleIds.length
+			? `Ignored roles\n${settings.ignoredRoleIds.map((id) => roleMention(id)).join("\n")}`
+			: "No ignored roles configured.";
+
+		await interaction.reply({
+			components: [statusContainer(StatusColor.Neutral, content)],
+			flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+		});
+	}
+
 	private async cleanupThreadStateForChannel(channelId: string): Promise<void> {
 		const channel = await this.container.client.channels
 			.fetch(channelId)
@@ -283,6 +367,38 @@ export class SettingsCommand extends Subcommand {
 									"role to ping on escalation (omit to clear the current role)",
 								)
 								.setRequired(false),
+						),
+				)
+				.addSubcommandGroup((group) =>
+					group
+						.setName("ignored-roles")
+						.setDescription("configure roles whose messages are ignored")
+						.addSubcommand((command) =>
+							command
+								.setName("add")
+								.setDescription("ignore messages from members with a role")
+								.addRoleOption((option) =>
+									option
+										.setName("role")
+										.setDescription("role to ignore")
+										.setRequired(true),
+								),
+						)
+						.addSubcommand((command) =>
+							command
+								.setName("remove")
+								.setDescription("resume processing messages from a role")
+								.addRoleOption((option) =>
+									option
+										.setName("role")
+										.setDescription("role to stop ignoring")
+										.setRequired(true),
+								),
+						)
+						.addSubcommand((command) =>
+							command
+								.setName("list")
+								.setDescription("list roles whose messages are ignored"),
 						),
 				)
 				.setContexts(InteractionContextType.Guild)

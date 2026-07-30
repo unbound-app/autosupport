@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	addIgnoredRoleId,
 	addSupportChannelId,
 	clearKnowledgeBaseState,
 	clearSupportRoleId,
@@ -15,6 +16,7 @@ import {
 	getOrCreateGuildSettings,
 	getThreadResponseId,
 	isThreadEscalated,
+	removeIgnoredRoleId,
 	removeSupportChannelId,
 	setKnowledgeBaseState,
 	setSupportRoleId,
@@ -47,6 +49,7 @@ describe("getOrCreateGuildSettings", () => {
 		expect(settings.knowledgeBaseVectorStoreId).toBeNull();
 		expect(settings.knowledgeBaseHash).toBeNull();
 		expect(settings.supportRoleId).toBeNull();
+		expect(settings.ignoredRoleIds).toEqual([]);
 	});
 
 	test("returns the existing row on subsequent calls without resetting it", async () => {
@@ -55,6 +58,33 @@ describe("getOrCreateGuildSettings", () => {
 
 		const settings = await getOrCreateGuildSettings(guildId);
 		expect(settings.channelIds).toEqual(["111111111111111111"]);
+	});
+});
+
+describe("addIgnoredRoleId / removeIgnoredRoleId", () => {
+	test("adds and removes ignored roles", async () => {
+		const guildId = freshGuildId();
+		const added = await addIgnoredRoleId(guildId, "555555555555555555");
+		expect(added.ignoredRoleIds).toEqual(["555555555555555555"]);
+		const settings = await removeIgnoredRoleId(guildId, "555555555555555555");
+		expect(settings.ignoredRoleIds).toEqual([]);
+	});
+
+	test("does not add duplicate ignored roles", async () => {
+		const guildId = freshGuildId();
+		await addIgnoredRoleId(guildId, "555555555555555555");
+		const settings = await addIgnoredRoleId(guildId, "555555555555555555");
+		expect(settings.ignoredRoleIds).toEqual(["555555555555555555"]);
+	});
+
+	test("keeps ignored roles separate between guilds", async () => {
+		const guildId = freshGuildId();
+		const otherGuildId = freshGuildId();
+		await addIgnoredRoleId(guildId, "555555555555555555");
+
+		expect(
+			(await getOrCreateGuildSettings(otherGuildId)).ignoredRoleIds,
+		).toEqual([]);
 	});
 });
 

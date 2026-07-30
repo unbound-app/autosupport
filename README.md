@@ -47,6 +47,7 @@ To enable the **Request Human** button on assistant replies, create a forum tag 
 - `/settings info` — configured support channels, knowledge base stats, support role, and how many threads are currently waiting on a human, for the guild
 - `/settings channels add|remove` — configure which forum channels the bot responds in
 - `/settings support-role [role]` — set the role pinged when a thread requests human assistance; omit `role` to clear it
+- `/settings ignored-roles add|remove|list` — configure roles whose messages are ignored in support threads
 - `/knowledgebase list` — page through the guild's knowledge base entries
 - `/knowledgebase add` — add an entry via a modal (problem, solution, optional notes)
 - `/knowledgebase edit <entry>` — edit an entry (autocomplete by problem) via a prefilled modal

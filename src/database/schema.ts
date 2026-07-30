@@ -9,6 +9,10 @@ export const guildPreferences = sqliteTable("guild_preferences", {
 	knowledgeBaseVectorStoreId: text("knowledge_base_vector_store_id"),
 	knowledgeBaseHash: text("knowledge_base_hash"),
 	supportRoleId: text("support_role_id"),
+	ignoredRoleIds: text("ignored_role_ids", { mode: "json" })
+		.notNull()
+		.default("[]")
+		.$type<string[]>(),
 });
 
 export const threadResponses = sqliteTable("thread_responses", {
