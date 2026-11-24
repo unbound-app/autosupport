@@ -30,18 +30,18 @@
 		"discord.js": "^14.28.1",
 		"drizzle-orm": "^0.45.4",
 		"openai": "^6.48.0",
-		"systeminformation": "^5.33.22",
+		"systeminformation": "^5.33.23",
 		"tslib": "^2.9.1",
 		"zod": "^4.6.7"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.6.7",
-		"bun-types": "^1.4.4",
+		"@biomejs/biome": "^2.6.8",
+		"bun-types": "^1.4.5",
 		"drizzle-kit": "^0.31.11",
-		"fast-check": "^4.10.2",
+		"fast-check": "^4.10.3",
 		"git-cz": "^4.9.0",
 		"husky": "^9.1.7",
-		"lint-staged": "^17.6.0",
+		"lint-staged": "^17.6.1",
 		"typescript": "^7.0.2"
 	},
 	"lint-staged": {
